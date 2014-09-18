@@ -13,7 +13,7 @@ diag_mod(party_psearch(Name,Drink,[PX,PY,PR]),
   [  
     id ==> place_to_see,
     type ==> recursive,
-    embedded_dm ==> move(p4,Status),
+    embedded_dm ==> move(p2,Status),
     arcs ==> [
       %success : [say('If you want something, raise your hand please.')] => find_person,
       success : [say('If you want something, please come close to me and say your name.')] => ask_name,
