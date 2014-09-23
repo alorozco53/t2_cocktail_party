@@ -12,7 +12,7 @@ diag_mod(party_osearch(Object),
   [  
     id ==> find_object,
     type ==> recursive,
-    embedded_dm ==> find(object, Object, [kitchen_table], [-20, 0, 20], [-30], object, [Object_found|Rest], Remaining_Positions, false, false, false, Status),
+    embedded_dm ==> find(object, [Object], [kitchen_table], [-20, 0, 20], [-30], object, [Object_found|Rest], Remaining_Positions, false, false, false, Status),
     arcs ==> [
       success : [say('Found object.')] => take_object(Object_found,left),
       error   : [say('Did not found object. Retrying.')] => find_object

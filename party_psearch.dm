@@ -13,7 +13,7 @@ diag_mod(party_psearch(Name,Drink,[PX,PY,PR]),
   [  
     id ==> place_to_see,
     type ==> recursive,
-    embedded_dm ==> move(p2,Status),
+    embedded_dm ==> move([p2],Status),
     arcs ==> [
       %success : [say('If you want something, raise your hand please.')] => find_person,
       success : [say('If you want something, please come close to me and say your name.')] => ask_name,
@@ -56,8 +56,8 @@ diag_mod(party_psearch(Name,Drink,[PX,PY,PR]),
     type ==> recursive,
     embedded_dm ==> see_person(N,memorize,Status),
     arcs ==> [
-      success : [execute('scripts/killvisual.sh')] => ask_order,
-      error   : [say('Error in memorizing. Retrying.')] => memorize_person(N)
+      success : [xssay('i succeeded in memorizing your face'),execute('scripts/killvisual.sh')] => ask_order,
+      error   : [say('Error in memorizing. Retrying.'),execute('scripts/killvisual.sh'),execute('scripts/personvisual.sh')] => memorize_person(N)
     ]
   ],
 % Preguntar orden

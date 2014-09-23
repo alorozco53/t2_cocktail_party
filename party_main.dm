@@ -35,9 +35,8 @@ diag_mod(party_main,
   [
     id ==> busca_por_objetos([]),
     type ==> neutral,
-    embedded_dm ==> party_osearch(OL),
     arcs ==> [
-      fs : say('I finished delivering. Yahooooooooo. Bye') => exit
+      empty : say('I finished delivering. Yahooooooooo. Bye') => exit
     ]
   ],
 
@@ -58,7 +57,7 @@ diag_mod(party_main,
     embedded_dm ==> party_p2search(PH,CH),
     arcs ==> [
       fs : [set(pos_to_come_back_list,PT), set(client_list,CT), 
-	    say('Finished delivering one object.') => busca_por_objetos(ObjectList)
+	    say('Finished delivering one object.')] => busca_por_objetos(ObjectList)
     ]
   ],
 % Salir de la arena
@@ -80,7 +79,7 @@ diag_mod(party_main,
 
 % Second argument: list of local variables
   [
-    object_room ==> kitchen,
+    object_room ==> kitchen_table,
     object_to_bring_list ==> [],
     pos_to_come_back_list ==> [],
     client_list ==> [],
