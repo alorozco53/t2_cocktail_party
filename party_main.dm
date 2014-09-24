@@ -24,28 +24,38 @@ diag_mod(party_main,
     type ==> recursive,
     embedded_dm ==> party_psearch(Name,Drink,[PX,PY,PR]),
     arcs ==> [
-      fs(_,_) : [set(client_list,[Name]), set(pos_to_come_back_list,[PX,PY,PR])] => busca_por_objetos(Drink)
+      fs(_,_) : [get(client_list,CL),get(drink_list,DL),get(pos_to_come_back_list,PL),
+	         append(CL,[Name],CLNew),append(DL,[Drink],DLNew),append(PL,[[PX,PY,PR]],PLNew),
+                 set(client_list,CLNew),set(drink_list,DLNew),set(pos_to_come_back_list,PLNew),get(rem_people,RP),
+                 (RP < 2 -> Sit = busca_persona_para_pedido |
+	          otherwise -> [say('now i will bring your requests'), Sit = busca_por_objetos(CLNew,DLNew,PLNew)]),
+	         inc(rem_people,RP)] => Sit
     ]
   ],
 %Busca por objeto
   [
-    id ==> busca_por_objetos(Object),
-    type ==> recursive,
-    embedded_dm ==> party_osearch(Object),
+    id ==> busca_por_objetos([],_,_),
+    type ==> neutral,
     arcs ==> [
-      fs :  [say('I finished getting one object. I am going to deliver it.'),
-             get(pos_to_come_back_list,PosList),get(client_list,[Client|_])] => entrega_de_orden(PosList,Client)
+       empty : say('i finished delivering everything') => exit
+    ]
+  ],
+
+  [
+    id ==> busca_por_objetos(CL, [DH|DT], PL),
+    type ==> recursive,
+    embedded_dm ==> party_osearch(DH),
+    arcs ==> [
+      fs :  say('I finished getting one object. I am going to deliver it.') => entrega_de_orden(CL,DT,PL)
     ]
   ],
 %Busca por persona para entregar pedido
   [
-    id ==> entrega_de_orden(PosList, Client),
+    id ==> entrega_de_orden([CH|CT], DL, [PH|PT]),
     type ==> recursive,
-    embedded_dm ==> party_p2search(PosList,Client),
+    embedded_dm ==> party_p2search(PH,CH),
     arcs ==> [
-      fs : [set(pos_to_come_back_list,PT), set(client_list,CT), say('Finished delivering an object.'), get(rem_people,RP),
-            (RP < 2 -> Sit = busca_persona_para_pedido | otherwise -> [say('I finished doing my services'), Sit = exit]),
-	    inc(rem_people,RP)] => Sit
+      fs : say('Finished delivering one object.') => busca_por_objeto(CT,DL,PT)
     ]
   ],
 % Salir de la arena
@@ -70,6 +80,7 @@ diag_mod(party_main,
     object_room ==> kitchen_table,
     pos_to_come_back_list ==> [],
     client_list ==> [],
+    drink_list ==> [],
     rem_people ==> none
   ]
 ).
