@@ -24,47 +24,35 @@ diag_mod(party_main,
     type ==> recursive,
     embedded_dm ==> party_psearch(Name,Drink,[PX,PY,PR]),
     arcs ==> [
-      fs(_,_) : [get(client_list,NameList), get(object_to_bring_list,ObjectList), get(pos_to_come_back_list,PosList),
-	         append(NameList,[Name],NL), append(ObjectList,[Drink],OL), append(PosList,[[PX,PY,PR]],PL),
-		 set(client_list,NL), set(object_to_bring_list,OL), set(pos_to_come_back_list,PL), get(rem_people,RP),
-		 (RP < 2 -> Sit = busca_por_objetos(OL) | otherwise -> Sit = busca_persona_para-pedido),
-	         inc(rem_people,RP)] => Sit
+      fs(_,_) : [set(client_list,[Name]), set(pos_to_come_back_list,[PX,PY,PR])] => busca_por_objetos(Drink)
     ]
   ],
 %Busca por objeto
   [
-    id ==> busca_por_objetos([]),
-    type ==> neutral,
-    arcs ==> [
-      empty : say('I finished delivering. Yahooooooooo. Bye') => exit
-    ]
-  ],
-
-  [
-    id ==> busca_por_objetos([OH|OT]),
+    id ==> busca_por_objetos(Object),
     type ==> recursive,
-    prog ==> [say('now i will go get the next request')],
-    embedded_dm ==> party_osearch(OH),
+    embedded_dm ==> party_osearch(Object),
     arcs ==> [
-      fs : say('I finished getting one object. I am going to deliver it.') => entrega_de_orden(OT)
+      fs :  [say('I finished getting one object. I am going to deliver it.'),
+             get(pos_to_come_back_list,PosList),get(client_list,[Client|_])] => entrega_de_orden(PosList,Client)
     ]
   ],
 %Busca por persona para entregar pedido
   [
-    id ==> entrega_de_orden(ObjectList),
+    id ==> entrega_de_orden(PosList, Client),
     type ==> recursive,
-    prog ==> [get(pos_to_come_back_list,[PH|PT]),get(client_list,[CH|CT])],
-    embedded_dm ==> party_p2search(PH,CH),
+    embedded_dm ==> party_p2search(PosList,Client),
     arcs ==> [
-      fs : [set(pos_to_come_back_list,PT), set(client_list,CT), 
-	    say('Finished delivering one object.')] => busca_por_objetos(ObjectList)
+      fs : [set(pos_to_come_back_list,PT), set(client_list,CT), say('Finished delivering an object.'), get(rem_people,RP),
+            (RP < 2 -> Sit = busca_persona_para_pedido | otherwise -> [say('I finished doing my services'), Sit = exit]),
+	    inc(rem_people,RP)] => Sit
     ]
   ],
 % Salir de la arena
   [  
     id ==> exit,
     type ==> recursive,
-    embedded_dm ==> move(exit,Status),
+    embedded_dm ==> move([exit],Status),
     arcs ==> [
       success : [say('I am in the exit')] => fs,
       error   : [say('Error in navigation')] => fs
@@ -80,7 +68,6 @@ diag_mod(party_main,
 % Second argument: list of local variables
   [
     object_room ==> kitchen_table,
-    object_to_bring_list ==> [],
     pos_to_come_back_list ==> [],
     client_list ==> [],
     rem_people ==> none

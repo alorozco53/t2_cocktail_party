@@ -75,7 +75,7 @@ diag_mod(party_psearch(Name,Drink,[PX,PY,PR]),
     id ==> get_curr_pos(Drink),
     type ==> positionxyz,
     arcs ==> [
-      pos(PX,PY,PR) : [execute('scripts/killvisual.sh')] => fs(Drink,[PX,PY,PZ])
+      pos(PX,PY,PR) : [execute('scripts/killvisual.sh')] => fs(Drink,[PX,PY,PR])
     ]
   ],
 %Situacion final

@@ -22,20 +22,20 @@ diag_mod(party_p2search(Pos,Pe),
   [  
     id ==> find_person,
     type ==> recursive,
-    embedded_dm ==>find(person, Pe, [c1,c4,c2], [-20,0,20], [0,20], recognize_with_approach, Found_Objects, Remaining_Positions, true, false, false, Status),
+    embedded_dm ==>find(person, Pe, [p2], [-20,0,20], [0,20], recognize_with_approach, Found_Objects, Remaining_Positions, true, false, false, Status),
     arcs ==> [
-      success : [say('I found you'),execute('scripts/killvisual.sh')] => hand_object,
-      error   : [say('Did not found anyone. Retrying.')] => find_person(Pe)
+      success : [say('I found you'),execute('scripts/killvisual.sh')] => hand_object(left),
+      error   : [say(['if youu hear me', Pe, 'please stand in front of me']),execute('scripts/killvisual.sh')] => hand_object(left)
     ]
   ],
 % Acercarse a la persona
   [  
-    id ==> hand_object,
+    id ==> hand_object(Hand),
     type ==> recursive,
-    embedded_dm ==> relieve(left, Status),
+    embedded_dm ==> relieve(Hand, Status),
     arcs ==> [
       success : [say('Enjoy.')] => fs,
-      error   : [say('Error in handing object. Retrying.')] => hand_object
+      error   : [say('Error in handing object. Retrying.')] => hand_object(right)
     ]
   ],
 %Situacion final
