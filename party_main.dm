@@ -5,7 +5,7 @@ diag_mod(party_main,
     id ==> is,	
     type ==> neutral,
     arcs ==> [
-      empty : [tiltv(0),tilth(0),set(rem_people,0)] => detect_door
+      empty : [tiltv(0),tilth(0)] => detect_door
     ]
   ],
 	 [  
@@ -22,14 +22,14 @@ diag_mod(party_main,
   [
     id ==> busca_persona_para_pedido,
     type ==> recursive,
+    prog ==> [inc(rem_people,RP)],
     embedded_dm ==> party_psearch(Name,Drink,[PX,PY,PR]),
     arcs ==> [
       fs(_,_) : [get(client_list,CL),get(drink_list,DL),get(pos_to_come_back_list,PL),
 	         append(CL,[Name],CLNew),append(DL,[Drink],DLNew),append(PL,[[PX,PY,PR]],PLNew),
                  set(client_list,CLNew),set(drink_list,DLNew),set(pos_to_come_back_list,PLNew),get(rem_people,RP),
-                 (RP < 2 -> Sit = busca_persona_para_pedido |
-	          otherwise -> [say('now i will bring your requests'), Sit = busca_por_objetos(CLNew,DLNew,PLNew)]),
-	         inc(rem_people,RP)] => Sit
+                 (RP < 3 -> Sit = busca_persona_para_pedido |
+	          otherwise -> [say('now i will bring your requests'), Sit = busca_por_objetos(CLNew,DLNew,PLNew)])] => Sit
     ]
   ],
 %Busca por objeto
@@ -81,6 +81,6 @@ diag_mod(party_main,
     pos_to_come_back_list ==> [],
     client_list ==> [],
     drink_list ==> [],
-    rem_people ==> none
+    rem_people ==> 0
   ]
 ).
