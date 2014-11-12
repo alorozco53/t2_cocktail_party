@@ -5,15 +5,14 @@ diag_mod(party_psearch(Time,Name,Drink,[PX,PY,PR],Status),
       type ==> neutral,
       arcs ==> [
         %empty : [execute('scripts/upfollow.sh')] => place_to_see
-         empty : [apply(generate_time_limit_em(Time,LimitTime),LimitTime),set(limit_time,LimitTime),
-                  set(locations,Locations),execute('scripts/personvisual.sh')] => place_to_see
+         empty : [apply(generate_time_limit_em(Time,LimitTime),LimitTime),set(limit_time,LimitTime),execute('scripts/personvisual.sh')] => place_to_see
       ]
     ],
 % Moverse al lugar indicado para buscar personas
   [  
     id ==> place_to_see,
     type ==> recursive,
-    embedded_dm ==> move([p2],Status),
+    embedded_dm ==> move([p2],Stat),
     arcs ==> [
       %success : [say('If you want something, raise your hand please.')] => find_person,
       success : [get(limit_time,LimTime),apply(verify_move_em(Stat,ask_name,LimTime,RS,NS),[RS,NS])
@@ -28,7 +27,7 @@ diag_mod(party_psearch(Time,Name,Drink,[PX,PY,PR],Status),
     type ==> recursive,
     embedded_dm ==> scan(gesture, hand_up, [-30,0,30], [0], 5, [PX,PY,PZ,PV], false, true, Stat),
     arcs ==> [
-      success : [get(limit_time,LimTime),apply(verify_scan_em(Status,get_close_to_person([PX,PY,PZ]),LimTime,RS,NS),[RS,NS]),
+      success : [get(limit_time,LimTime),apply(verify_scan_em(Stat,get_close_to_person([PX,PY,PZ]),LimTime,RS,NS),[RS,NS]),
                  say([RS,'i found you']),execute('scripts/killvisual.sh'),sleep(3),execute('scripts/personvisual.sh')] => NS,
       error   : [get(limit_time,LimTime),apply(verify_scan_em(Stat,find_person,LimTime,RS,NS),[RS,NS]),
                  say([RS,'Did not found anyone. Retrying.'])] => NS

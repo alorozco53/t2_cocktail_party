@@ -1,51 +1,85 @@
-diag_mod(party_p2search(Pos,Pe),
+diag_mod(party_p2search(Time, CameraError, Drink, Position, Person, Status),
 [
 %Situacion inicial (enciende el agente de personas)
     [
       id ==> is,	
       type ==> neutral,
       arcs ==> [
-        empty : [execute('scripts/personvisual.sh')] => place_to_start
+        empty : [apply(generate_time_limit_em(Time,LimitTime),LimitTime),set(limit_time,LimitTime),
+		 execute('scripts/personvisual.sh')] => place_to_start
       ]
     ],
 % Moverse al lugar donde se vio a la persona la ultima vez
-  [  
+  [
     id ==> place_to_start,
     type ==> recursive,
-    embedded_dm ==> move(Pos,Status),
+    embedded_dm ==> move(Position,Stat),
     arcs ==> [
-      success : [say('Starting to look for person to deliver to.')] => find_person,
-      error   : [say('Error in navigation. Retrying.')] => place_to_see
+      success : [get(limit_time,LimitTime),apply(verify_move_em(Stat,find_person(CameraError),RS,NS),[RS,NS]),
+                 say([RS,'Looking for the client who ordered this'])] => NS,
+      error   : [get(limit_time,LimitTime),apply(verify_move_em(Stat,place_to_start,RS,NS),[RS,NS]),
+                 say([RS,'Error in navigation. Retrying.'])] => NS
     ]
   ],
 %Busca personas haciendo un gesto
-  [  
-    id ==> find_person,
-    type ==> recursive,
-    embedded_dm ==>find(person, Pe, [p2], [-20,0,20], [0,20], recognize_with_approach, Found_Objects, Remaining_Positions, true, false, false, Status),
+  [
+    id ==> find_person(true),
+    type ==> neutral,
     arcs ==> [
-      success : [say('I found you'),execute('scripts/killvisual.sh')] => hand_object(left),
-      error   : [say(['if youu hear me', Pe, 'please stand in front of me']),execute('scripts/killvisual.sh')] => hand_object(left)
+      empty : say('since my camera doesnt work i will assume someone is in front of me') => hand_object(left)
+    ]
+  ],
+
+  [  
+    id ==> find_person(false),
+    type ==> recursive,
+    embedded_dm ==>find(person,Person,[p2],[-20,0,20],[0,20],recognize_with_approach,Found_Objects,Remaining_Positions,true,false,false,Stat),
+    arcs ==> [
+      success : [get(limit_time,LimitTime),apply(verify_find_em(Stat,hand_object,RS,NS),[RS,NS]),
+                 say([RS,'I found you']),execute('scripts/killvisual.sh')] => NS,
+      error   : [get(limit_time,LimitTime),apply(verify_find_em(Stat,hand_object,RS,NS),[RS,NS]),
+                 say([RS,'if youu hear me', Pe, 'please stand in front of me']),execute('scripts/killvisual.sh')] => NS
     ]
   ],
 % Acercarse a la persona
   [  
-    id ==> hand_object(Hand),
+    id ==> hand_object,
     type ==> recursive,
-    embedded_dm ==> relieve(Hand, Status),
+    embedded_dm ==> deliver(Drink,Position,handle,Stat),
     arcs ==> [
-      success : [say('Enjoy.')] => fs,
-      error   : [say('Error in handing object. Retrying.')] => hand_object(right)
+      success : [say('Enjoy it.')] => fs,
+      error   : [get(limit_time,LimitTime),apply(verify_deliver_em(Stat,hand_object,RS,NS),[RS,NS]),
+                 say([RS,'Error in handing object. Retrying.'])] => NS
     ]
   ],
 %Situacion final
   [
-    id ==> fs,
-    type ==> final
+    id ==> fs(Error),
+    type ==> neutral,
+    arcs ==> [
+      empty : [(Error = camera_error -> set(camera_error,true) |
+                otherwise -> set(camera_error,false)),say('sorry i failed in this mission')] => error
+    ]
+  ],
+
+  [
+    id ==> error,
+    type ==> final,
+    prog ==> [get(camera_error,CE),(CE = true -> Stat = camera_error | otherwise -> Stat = not_grasped)],
+    diag_mod ==> party_osearch(_,_,_,Stat)
+  ],
+  
+  [
+    id ==> success,
+    type ==> final,
+    prog ==> [get(camera_error,CE)],
+    diag_mod ==> party_osearch(_,_,_,ok)
   ]
 ],
 
 % Second argument: list of recognized(local variables
   [
+    limit_time ==> 0,
+    camera_error ==> false
   ]
 ).

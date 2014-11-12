@@ -13,32 +13,29 @@ diag_mod(party_main,
       		type ==> recursive,
       		embedded_dm ==> detect_door(Status),
       		arcs ==> [
-        			success : [say('The door is open')] => busca_persona_para_pedido,
+        			success : [say('The door is open')] => busca_persona_para_pedido([],[],[]),
         			error : [say('The door is still closed')] => detect_door
 				
       			]
     	],
 %Busca personas para pedido
   [
-    id ==> busca_persona_para_pedido,
+    id ==> busca_persona_para_pedido(CL,DL,PL),
     type ==> recursive,
-    prog ==> [get(client_list,CL),get(drink_list,DL),
-	      get(pos_to_come_back_list,PL),inc(rem_people,RP)],
+    prog ==> [inc(rem_people,RP)],
     embedded_dm ==> party_psearch(90,Name,Drink,[PX,PY,PR],Status),
     arcs ==> [
       success : [append(CL,[Name],CLNew),append(DL,[Drink],DLNew),append(PL,[[PX,PY,PR]],PLNew),
-                 set(client_list,CLNew),set(drink_list,DLNew),set(pos_to_come_back_list,PLNew),get(rem_people,RP),
-                 (RP < 3 -> Sit = busca_persona_para_pedido |
+                 (RP < 3 -> Sit = busca_persona_para_pedido(CLNew,DLNew,PLNew) |
 	          otherwise -> [Sit = busca_por_objetos(CLNew,DLNew,PLNew)])] => Sit,
       error : [append(CL,[Name],CLNew),append(DL,[Drink],DLNew),append(PL,[[PX,PY,PR]],PLNew),
-               set(client_list,CLNew),set(drink_list,DLNew),set(pos_to_come_back_list,PLNew),get(rem_people,RP),
 	       apply(verify_psearch_ckp(Status,busca_por_objetos(CLNew,DLNew,PLNew),RP,Action,RS,NS),[RS,NS]),
 	       Action,say(RS)] => NextSit
     ]
   ],
 %Busca por objeto
   [
-    id ==> busca_por_objetos([],_,_),
+    id ==> busca_por_objetos([], _, _),
     type ==> neutral,
     arcs ==> [
        empty : say('i finished delivering everything') => exit
@@ -46,21 +43,26 @@ diag_mod(party_main,
   ],
 
   [
-    id ==> busca_por_objetos(CL, [DH|DT], PL),
+    id ==> busca_por_objetos([CH|CT], [DH|DT], [PH|PT]),
     type ==> recursive,
-    prog ==> [say('now i will bring the requested objects')]
-    embedded_dm ==> party_osearch(DH),
+    prog ==> [say('now i will bring a requested drink'),get(camera_error,CameraError)]
+    embedded_dm ==> party_osearch(120,CameraError,DH,Status),
     arcs ==> [
-      fs :  say('I finished getting one object. I am going to deliver it.') => entrega_de_orden(CL,DT,PL)
+      success : say('I finished getting one object. I am going to deliver it.') => entrega_de_orden([CH|CT],DT,[PH|PT],DH),
+      error : [(Status = camera_error -> set(camera_error,true) |
+                otherwise -> []), say('i will try to get the next drink')] => busca_por_objetos(CT,DT,PT)
     ]
   ],
 %Busca por persona para entregar pedido
   [
-    id ==> entrega_de_orden([CH|CT], DL, [PH|PT]),
+    id ==> entrega_de_orden([CH|CT], DL, [PH|PT], GraspedDrink),
     type ==> recursive,
-    embedded_dm ==> party_p2search(PH,CH),
+    prog ==> [get(camera_error,CamError)],
+    embedded_dm ==> party_p2search(90,CamError,GraspedDrink,PH,CH,Status),
     arcs ==> [
-      fs : say('Finished delivering one object.') => busca_por_objeto(CT,DL,PT)
+      success : say('Finished delivering one object.') => busca_por_objetos(CT,DL,PT)
+      error : [(Status = camera_error -> set(camera_error,true) |
+                otherwise -> []), say('i will try to get the next drink')] => busca_por_objetos(CT,DL,PT)
     ]
   ],
 % Salir de la arena
@@ -73,7 +75,7 @@ diag_mod(party_main,
       error   : [say('Error in navigation')] => fs
     ]
   ],
-%Situacion final
+% Situacion final
   [
     id ==> fs,
     type ==> final
@@ -82,10 +84,8 @@ diag_mod(party_main,
 
 % Second argument: list of local variables
   [
-    object_room ==> kitchen_table,
-    pos_to_come_back_list ==> [],
-    client_list ==> [],
-    drink_list ==> [],
-    rem_people ==> 0
+    object_room ==> null,
+    rem_people ==> 0,
+    camera_error ==> false
   ]
 ).
