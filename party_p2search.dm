@@ -5,7 +5,7 @@ diag_mod(party_p2search(Time, CameraError, Drink, Position, Person, Status),
       id ==> is,	
       type ==> neutral,
       arcs ==> [
-        empty : [apply(generate_time_limit_em(Time,LimitTime),LimitTime),set(limit_time,LimitTime),
+        empty : [apply(generate_limit_time_em(T,L),[Time,LimitTime]),set(limit_time,LimitTime),
 		 execute('scripts/personvisual.sh')] => place_to_start
       ]
     ],
@@ -15,9 +15,9 @@ diag_mod(party_p2search(Time, CameraError, Drink, Position, Person, Status),
     type ==> recursive,
     embedded_dm ==> move(Position,Stat),
     arcs ==> [
-      success : [get(limit_time,LimitTime),apply(verify_move_em(Stat,find_person(CameraError),RS,NS),[RS,NS]),
+      success : [get(limit_time,LimitTime),apply(verify_move_em(A,B,C,D,E),[Stat,find_person(CameraError),LimitTime,RS,NS]),
                  say([RS,'Looking for the client who ordered this'])] => NS,
-      error   : [get(limit_time,LimitTime),apply(verify_move_em(Stat,place_to_start,RS,NS),[RS,NS]),
+      error   : [get(limit_time,LimitTime),apply(verify_move_em(A,B,C,D,E),[Stat,place_to_start,LimitTime,RS,NS]),
                  say([RS,'Error in navigation. Retrying.'])] => NS
     ]
   ],
@@ -35,9 +35,9 @@ diag_mod(party_p2search(Time, CameraError, Drink, Position, Person, Status),
     type ==> recursive,
     embedded_dm ==>find(person,Person,[p2],[-20,0,20],[0,20],recognize_with_approach,Found_Objects,Remaining_Positions,true,false,false,Stat),
     arcs ==> [
-      success : [get(limit_time,LimitTime),apply(verify_find_em(Stat,hand_object,RS,NS),[RS,NS]),
+      success : [get(limit_time,LimitTime),apply(verify_find_em(A,B,C,D,E),[Stat,hand_object,LimitTime,RS,NS]),
                  say([RS,'I found you']),execute('scripts/killvisual.sh')] => NS,
-      error   : [get(limit_time,LimitTime),apply(verify_find_em(Stat,hand_object,RS,NS),[RS,NS]),
+      error   : [get(limit_time,LimitTime),apply(verify_find_em(A,B,C,D,E),[Stat,find_person(false),LimitTime,RS,NS]),
                  say([RS,'if youu hear me', Pe, 'please stand in front of me']),execute('scripts/killvisual.sh')] => NS
     ]
   ],
@@ -48,7 +48,7 @@ diag_mod(party_p2search(Time, CameraError, Drink, Position, Person, Status),
     embedded_dm ==> deliver(Drink,Position,handle,Stat),
     arcs ==> [
       success : [say('Enjoy it.')] => fs,
-      error   : [get(limit_time,LimitTime),apply(verify_deliver_em(Stat,hand_object,RS,NS),[RS,NS]),
+      error   : [get(limit_time,LimitTime),apply(verify_deliver_em(A,B,C,D,E),[Stat,hand_object,LimitTime,RS,NS]),
                  say([RS,'Error in handing object. Retrying.'])] => NS
     ]
   ],

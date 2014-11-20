@@ -23,14 +23,14 @@ diag_mod(party_main,
     id ==> busca_persona_para_pedido(CL,DL,PL),
     type ==> recursive,
     prog ==> [inc(rem_people,RP)],
-    embedded_dm ==> party_psearch(90,Name,Drink,[PX,PY,PR],Status),
+    embedded_dm ==> party_psearch(90,Name,Drink,PosList,Status),
     arcs ==> [
-      success : [append(CL,[Name],CLNew),append(DL,[Drink],DLNew),append(PL,[[PX,PY,PR]],PLNew),
+      success : [append(CL,[Name],CLNew),append(DL,[Drink],DLNew),append(PL,[PosList],PLNew),
                  (RP < 3 -> Sit = busca_persona_para_pedido(CLNew,DLNew,PLNew) |
 	          otherwise -> [Sit = busca_por_objetos(CLNew,DLNew,PLNew)])] => Sit,
-      error : [append(CL,[Name],CLNew),append(DL,[Drink],DLNew),append(PL,[[PX,PY,PR]],PLNew),
-	       apply(verify_psearch_ckp(Status,busca_por_objetos(CLNew,DLNew,PLNew),RP,Action,RS,NS),[RS,NS]),
-	       Action,say(RS)] => NextSit
+      error : [append(CL,[Name],CLNew),append(DL,[Drink],DLNew),append(PL,[PosList],PLNew),
+	       apply(verify_psearch_ckp(S,N,R,D,E),[Status,busca_por_objetos(CLNew,DLNew,PLNew),RP,Action,RS,NS]),
+	       say(RS)] => NextSit
     ]
   ],
 %Busca por objeto
@@ -45,7 +45,7 @@ diag_mod(party_main,
   [
     id ==> busca_por_objetos([CH|CT], [DH|DT], [PH|PT]),
     type ==> recursive,
-    prog ==> [say('now i will bring a requested drink'),get(camera_error,CameraError)]
+    prog ==> [say('now i will bring a requested drink'),get(camera_error,CameraError)],
     embedded_dm ==> party_osearch(120,CameraError,DH,Status),
     arcs ==> [
       success : say('I finished getting one object. I am going to deliver it.') => entrega_de_orden([CH|CT],DT,[PH|PT],DH),
@@ -60,7 +60,7 @@ diag_mod(party_main,
     prog ==> [get(camera_error,CamError)],
     embedded_dm ==> party_p2search(90,CamError,GraspedDrink,PH,CH,Status),
     arcs ==> [
-      success : say('Finished delivering one object.') => busca_por_objetos(CT,DL,PT)
+      success : say('Finished delivering one object.') => busca_por_objetos(CT,DL,PT),
       error : [(Status = camera_error -> set(camera_error,true) |
                 otherwise -> []), say('i will try to get the next drink')] => busca_por_objetos(CT,DL,PT)
     ]
