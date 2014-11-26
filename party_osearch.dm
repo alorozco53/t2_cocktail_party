@@ -45,23 +45,20 @@ diag_mod(party_osearch(Time, CameraError, Object, Status),
   [
     id ==> fs(Error),
     type ==> neutral,
+    diag_mod ==> party_osearch(_,_,_,Error)
     arcs ==> [
-      empty : [(Error = camera_error -> set(camera_error,true) |
-                otherwise -> set(camera_error,false)),say('sorry i failed in this mission')] => error
+      empty : [say('sorry i failed in this mission')] => error
     ]
   ],
 
   [
-    id ==> error,
-    type ==> final,
-    prog ==> [get(camera_error,CE),(CE = true -> Stat = camera_error | otherwise -> Stat = not_grasped)],
-    diag_mod ==> party_osearch(_,_,_,Stat)
+    id ==> error
+    type ==> final
   ],
   
   [
     id ==> success,
     type ==> final,
-    prog ==> [get(camera_error,CE)],
     diag_mod ==> party_osearch(_,_,_,ok)
   ]
 ],

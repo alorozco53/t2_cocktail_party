@@ -47,32 +47,38 @@ diag_mod(party_p2search(Time, CameraError, Drink, Position, Person, Status),
     type ==> recursive,
     embedded_dm ==> deliver(Drink,Position,handle,Stat),
     arcs ==> [
-      success : [say('Enjoy it.')] => fs,
+      success : [say('Enjoy it.')] => success,
       error   : [get(limit_time,LimitTime),apply(verify_deliver_em(A,B,C,D,E),[Stat,hand_object,LimitTime,RS,NS]),
                  say([RS,'Error in handing object. Retrying.'])] => NS
     ]
   ],
 %Situacion final
   [
+    id ==> fs(time_is_up),
+    type ==> neutral,
+    diag_mod ==> party_osearch(_,_,_,time_is_up)
+    arcs ==> [
+      empty : empty  => error
+    ]
+  ],
+
+  [
     id ==> fs(Error),
     type ==> neutral,
+    diag_mod ==> party_osearch(_,_,_,Error)
     arcs ==> [
-      empty : [(Error = camera_error -> set(camera_error,true) |
-                otherwise -> set(camera_error,false)),say('sorry i failed in this mission')] => error
+      empty : empty  => error
     ]
   ],
 
   [
     id ==> error,
-    type ==> final,
-    prog ==> [get(camera_error,CE),(CE = true -> Stat = camera_error | otherwise -> Stat = not_grasped)],
-    diag_mod ==> party_osearch(_,_,_,Stat)
+    type ==> final
   ],
   
   [
     id ==> success,
     type ==> final,
-    prog ==> [get(camera_error,CE)],
     diag_mod ==> party_osearch(_,_,_,ok)
   ]
 ],

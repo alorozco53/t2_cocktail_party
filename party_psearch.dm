@@ -6,8 +6,7 @@ diag_mod(party_psearch(Time, Name, Drink, PositionList, Status),
       type ==> neutral,
       arcs ==> [
         %empty : [execute('scripts/upfollow.sh')] => place_to_see
-         empty : [apply(generate_limit_time_em(T,L),[Time,LimitTime]),set(limit_time,LimitTime),
-                  execute('scripts/personvisual.sh')] => place_to_see
+         empty : [apply(generate_limit_time_em(T,L),[Time,LimitTime]),set(limit_time,LimitTime)] => place_to_see
       ]
     ],
 % Moverse al lugar indicado para buscar personas
@@ -53,7 +52,7 @@ diag_mod(party_psearch(Time, Name, Drink, PositionList, Status),
     embedded_dm ==> ask('What is your name.',names,true,[],Name,Stat),
     arcs ==> [
       success : [get(limit_time,LimTime),apply(verify_ask_em(A,B,C,D,E),[Stat,memorize_person(Name),LimTime,RS,NS]),
-                 say([RS,'Memorizing your face.']),tilt(20)] => NS,
+                 say([RS,'Memorizing your face.']),tilt(20),execute('scripts/personvisual.sh')] => NS,
       error   : [get(limit_time,LimTime),apply(verify_ask_em(A,B,C,D,E),[Stat,ask_name,LimTime,RS,NS]),
                  say([RS,'Could not understand.'])] => NS
     ]
@@ -62,33 +61,34 @@ diag_mod(party_psearch(Time, Name, Drink, PositionList, Status),
   [  
     id ==> memorize_person(N),
     type ==> recursive,
-    prog ==> [get(counter,Counter)],
+    prog ==> [inc(counter,Counter)],
     embedded_dm ==> see_person(N,memorize,Stat),
+    diag_mod ==> party_psearch(_,N,_,_,_),
     arcs ==> [
       success : [get(limit_time,LimTime),apply(verify_see_person_ckp(A,B,C,D,E,F),[Stat,ask_order,LimTime,Counter,RS,NS]),
                  say([RS,'i succeeded in memorizing your face']),set(memorized,true)] => NS,
       error   : [get(limit_time,LimTime),apply(verify_see_person_ckp(A,B,C,D,E,F),[Stat,memorize_person(N),LimTime,Counter,RS,NS]),
                  say(RS),execute('scripts/killvisual.sh'),
-		 execute('scripts/personvisual.sh'),inc(counter,Counter)] => NS
+		 execute('scripts/personvisual.sh')] => NS
     ]
   ],
 % Preguntar orden
   [
     id ==> ask_order,
     type ==> recursive,
-    prog ==> [execute('scripts/killvisual.sh')],
     embedded_dm ==> ask('What do you want me to bring you.',drink,true,[],Drink,Stat),
     arcs ==> [
-      success : [get(limit_time,LimTime),apply(verify_ask_em(A,B,C,D,E),[Stat,get_curr_pos,LimTime,RS,NS]),
-                 say([RS,'I will bring your order soon.']),tilt(20),set(drink,Drink)] => NS,
+      success : [get(limit_time,LimTime),apply(verify_ask_em(A,B,C,D,E),[Stat,get_curr_pos(Drink),LimTime,RS,NS]),
+                 say([RS,'I will bring your order soon.']),tilt(20)] => NS,
       error   : [get(limit_time,LimTime),apply(verify_ask_em(A,B,C,D,E),[Stat,ask_order,LimTime,RS,NS]),
                  say([RS,'Could not understand.'])] => NS
     ]
   ],
 % Guardar posicion actual
   [  
-    id ==> get_curr_pos,
+    id ==> get_curr_pos(Drink),
     type ==> positionxyz,
+    diag_mod ==> party_psearch(_,_,Drink,_,_),
     arcs ==> [
       pos(PX,PY,PR) : [execute('scripts/killvisual.sh'),set(position,[PX,PY,PR])] => success
     ]
@@ -97,33 +97,39 @@ diag_mod(party_psearch(Time, Name, Drink, PositionList, Status),
   [
     id ==> fs(camera_error),
     type ==> positionxyz,
+    diag_mod ==> party_psearch(_,_,_,_,camera_error),
     arcs ==> [
-      pos(X,Y,Z) : [say('since my camera is no longer working please keep close to my microphone'),
-	            set(position,[PX,PY,PR]),set(error_status,camera_error)] => error
+      pos(X,Y,Z) : [say('since my camera is no longer working please keep close to my microphone')] => unify_error(X,Y,Z)
     ]
   ],
 
   [
     id ==> fs(time_is_up),
     type ==> positionxyz,
+    diag_mod ==> party_psearch(_,_,_,_,time_is_up),
     arcs ==> [
-      pos(X,Y,Z) : [say('my time is up please stand in front of me'),
-	            set(position,[PX,PY,PR]),set(error_status,time_is_up)] => error
+      pos(X,Y,Z) : [say('my time is up please stand in front of me')] => unify_error(X,Y,Z)
+    ]
+  ],
+
+  [
+    id ==> unify_error(X,Y,Z),
+    type ==> neutral,
+    diag_mod ==> party_psearch(_,_,_,[X,Y,Z],_),
+    arcs ==> [
+      empty : empty => error
     ]
   ],
 
   [
     id ==> success,
     type ==> final,
-    prog ==> [get(drink,Drink),get(position,Curr_pos)],
-    diag_mod ==> party_psearch(_,Drink,Curr_pos,ok)
+    diag_mod ==> party_psearch(_,_,_,_,ok)
   ],
 
   [
     id ==> error,
-    type ==> final,
-    prog ==> [get(drink,Drink),get(position,Curr_pos),get(error_status,Erreur)],
-    diag_mod ==> party_psearch(_,Drink,Curr_pos,Erreur)
+    type ==> final
   ]
  ],
 % Second argument: list of recognized(local variables)
